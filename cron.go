@@ -187,6 +187,7 @@ func (c *Cron) run() {
 			c.snapshot <- c.entrySnapshot()
 
 		case <-c.stop:
+			timer.Stop()
 			return
 		}
 
