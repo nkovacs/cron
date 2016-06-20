@@ -2,7 +2,6 @@ package cron
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"strconv"
 	"strings"
@@ -31,7 +30,7 @@ func Parse(spec string) (_ Schedule, err error) {
 	// (second) (minute) (hour) (day of month) (month) (day of week, optional)
 	fields := strings.Fields(spec)
 	if len(fields) != 5 && len(fields) != 6 {
-		log.Panicf("Expected 5 or 6 fields, found %d: %s", len(fields), spec)
+		panicf("Expected 5 or 6 fields, found %d: %s", len(fields), spec)
 	}
 
 	// If a sixth field is not provided (DayOfWeek), then it is equivalent to star.
@@ -87,7 +86,7 @@ func getRange(expr string, r bounds) uint64 {
 		case 2:
 			end = parseIntOrName(lowAndHigh[1], r.names)
 		default:
-			log.Panicf("Too many hyphens: %s", expr)
+			panicf("Too many hyphens: %s", expr)
 		}
 	}
 
@@ -102,17 +101,17 @@ func getRange(expr string, r bounds) uint64 {
 			end = r.max
 		}
 	default:
-		log.Panicf("Too many slashes: %s", expr)
+		panicf("Too many slashes: %s", expr)
 	}
 
 	if start < r.min {
-		log.Panicf("Beginning of range (%d) below minimum (%d): %s", start, r.min, expr)
+		panicf("Beginning of range (%d) below minimum (%d): %s", start, r.min, expr)
 	}
 	if end > r.max {
-		log.Panicf("End of range (%d) above maximum (%d): %s", end, r.max, expr)
+		panicf("End of range (%d) above maximum (%d): %s", end, r.max, expr)
 	}
 	if start > end {
-		log.Panicf("Beginning of range (%d) beyond end of range (%d): %s", start, end, expr)
+		panicf("Beginning of range (%d) beyond end of range (%d): %s", start, end, expr)
 	}
 
 	return getBits(start, end, step) | extra_star
@@ -132,10 +131,10 @@ func parseIntOrName(expr string, names map[string]uint) uint {
 func mustParseInt(expr string) uint {
 	num, err := strconv.Atoi(expr)
 	if err != nil {
-		log.Panicf("Failed to parse int from %s: %s", expr, err)
+		panicf("Failed to parse int from %s: %s", expr, err)
 	}
 	if num < 0 {
-		log.Panicf("Negative number (%d) not allowed: %s", num, expr)
+		panicf("Negative number (%d) not allowed: %s", num, expr)
 	}
 
 	return uint(num)
@@ -221,11 +220,15 @@ func parseDescriptor(spec string) Schedule {
 	if strings.HasPrefix(spec, every) {
 		duration, err := time.ParseDuration(spec[len(every):])
 		if err != nil {
-			log.Panicf("Failed to parse duration %s: %s", spec, err)
+			panicf("Failed to parse duration %s: %s", spec, err)
 		}
 		return Every(duration)
 	}
 
-	log.Panicf("Unrecognized descriptor: %s", spec)
+	panicf("Unrecognized descriptor: %s", spec)
 	return nil
+}
+
+func panicf(format string, v ...interface{}) {
+	panic(fmt.Sprintf(format, v...))
 }
